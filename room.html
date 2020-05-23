@@ -1,0 +1,202 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title></title>
+<link rel="stylesheet" type="text/css" href="room.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+<style type="text/css">
+
+</style>
+
+<body data-rsssl=1>
+  <div id="toolbar">Nose</div>
+  <div id="wrapper" class="content">
+    <div id="map">
+      <canvas id="mapCanvas"/>
+    </div>
+    <div id="chat">
+      <div id="chatOut"  class="content">
+        <div>
+          <div id="menu" style="width: 100%">
+            <div class="btn-group" role="group" aria-label="Basic example">
+              <button type="button" class="btn btn-secondary">Chat</button>
+              <button type="button" class="btn btn-secondary">Images</button>
+              <button type="button" class="btn btn-secondary">Maps</button>
+              <button type="button" class="btn btn-secondary">Music</button>
+              <button type="button" class="btn btn-secondary">Documents</button>
+              <button type="button" class="btn btn-secondary">Settings</button>
+            </div>
+          </div>
+          <div style="width: 100%">
+            "On the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse pains."
+          </div>
+        </div>
+      </div>
+      <div id="chatIn"  class="content">
+        <textarea id="chatInput"></textarea>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script type="text/javascript">
+/**
+* Breakout Game
+* @author Joshua Sager
+* @version 1.0
+*/
+
+window.onload = init;
+var stage;
+var bricks = new Array();
+var colors = ['rgb(255,0,0)','rgb(0,255,0)','rgb(0,0,255)','rgb(255,255,0)']
+var STAGE_WIDTH = 480;
+var STAGE_HEIGHT = 480;
+var grid_width = 64
+var grid_height = 64
+var mouseX = 0;
+var mouseY = 0;
+var loopInterval = setInterval(loop,1000/30);
+var gameState;
+var img = null
+
+function init(){
+	gameState = "loading";
+	// events
+	window.onmousemove = function(event){onMouseMoveHandler(event);}
+	initCanvas();
+	gameState = "play";
+}
+
+function loop(){
+	draw();
+}
+
+
+function message(text){
+	tag = document.createElement("h1");
+	document.body.appendChild(tag);
+	tag.innerHTML = text;
+}
+/**
+* Drawing -- updates to graphics on screen
+*/
+function draw(){
+	clearStage();
+  if (img != null)
+    stage.drawImage(img, 0, 0, grid_width, grid_height)
+  drawGrid();
+  stage.fillStyle = 'red'
+  stage.fillRect(mouseX - mouseX % grid_width, mouseY - mouseY % grid_height, grid_width, grid_height)
+}
+
+function drawGrid() {
+  stage.beginPath();       // Start a new path
+  stage.strokeStyle = 'white'
+  for(var i = 0; i < STAGE_HEIGHT / grid_height; i++){
+    stage.moveTo(0, (i + 1) * grid_height );    // Move the pen to (30, 50)
+    stage.lineTo(STAGE_WIDTH, (i + 1) * grid_height);  // Draw a line to (150, 100
+  }
+
+  for(var i = 0; i < STAGE_WIDTH / grid_width; i++){
+    stage.moveTo((i + 1) * grid_width, 0 );    // Move the pen to (30, 50)
+    stage.lineTo((i + 1) * grid_width, STAGE_HEIGHT);  // Draw a line to (150, 100
+  }
+  stage.stroke();          // Render the path
+}
+
+
+/**
+* Canvas
+*/
+function initCanvas(){
+	canvas = document.getElementById("mapCanvas");
+	context = canvas.getContext('2d');
+	canvas.width=STAGE_WIDTH;
+	canvas.height=STAGE_HEIGHT;
+  canvas.ondrop = function(event){ handleDrop(event)}
+  canvas.ondragover = function(event) {allowDrop(event)}
+	// document.body.appendChild(canvas);
+	stage = context;
+  Split(["#map", "#chat"], {
+    gutterSize: 5,
+    sizes: [80,20]
+  });
+
+  Split(["#chatOut", "#chatIn"], {
+    direction: 'vertical',
+    gutterSize: 5,
+    sizes: [80,20]
+  });
+}
+
+function allowDrop(e) {
+  e.preventDefault();
+}
+
+function handleDrop(e) {
+  var url = e.dataTransfer.getData("Text")
+  e.preventDefault();
+  // this / e.target is current target element.
+
+  if (e.stopPropagation) {
+    e.stopPropagation(); // stops the browser from redirecting.
+  }
+  img = new Image()
+  img.src = url
+  // See the section on the DataTransfer object.
+
+  return false;
+}
+
+/**
+* Stage Methods
+*/
+function clearStage(){
+	stage.clearRect(0,0,STAGE_WIDTH,STAGE_HEIGHT);
+  stage.fillStyle = 'black'
+  stage.fillRect(0,0,STAGE_WIDTH,STAGE_HEIGHT)
+}
+/**
+* Mouse Methods
+*/
+function getMousePosition(evt){
+	var e = new MouseEvent(evt);
+	var rect = canvas.getBoundingClientRect();
+	mouseX = e.x - rect.left;
+	mouseY = e.y - rect.top;
+}
+function onMouseMoveHandler(evt){
+	getMousePosition(evt);
+}
+/**
+* MouseEvent Class
+* Creates a global reference to the mouse position via mouseX and mouseY
+*/
+function MouseEvent(e){
+	e?this.e=e:this.e=window.event;
+	e.pageX?this.x=e.pageX:this.x=e.clientX;
+	e.pageY?this.y=e.pageY:this.y=e.clientY;
+}
+/**
+* Brick Class
+*/
+function Brick(x,y,width,height){
+
+	this.color = colors[parseInt(Math.random()*colors.length)]
+
+	this.update=function(){
+		stage.fillStyle = this.color;
+		stage.fillRect(this.x,this.y,this.width,this.height);
+	}
+}
+
+  </script>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
