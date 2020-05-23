@@ -1,0 +1,26 @@
+{
+  "name": "webtabletop",
+  "description": "Online tabletop for role-playing games",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/obrokedo/webtabletop.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GNU GPLv3",
+  "bugs": {
+    "url": "https://github.com/obrokedo/webtabletop/issues"
+  },
+  "homepage": "https://github.com/obrokedo/webtabletop/",
+  "dependencies" : {
+      "socket.io" : ">=2.3.0",
+      "pg" : ">=8.2.1",
+      "express": ">0.0.0"
+  }
+}
