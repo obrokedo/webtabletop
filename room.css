@@ -13,12 +13,13 @@ body {
 }
 
 #map {
-  display: flex;
+  display: grid;
   height: 100vh;
   width:  100vw;
   justify-content: center;
   align-items: center;
   background-color: lightgray;
+  overflow: auto;
 }
 
 #toolbar {
