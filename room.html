@@ -11,7 +11,12 @@
 </style>
 
 <body data-rsssl=1>
-  <div id="toolbar">Nose</div>
+  <div id="toolbar">
+    <div class="btn-group" role="group" aria-label="Basic example">
+      <button type="button" class="btn btn-secondary" id="buttonZoomIn">+</button>
+      <button type="button" class="btn btn-secondary" id="buttonZoomOut">-</button>
+    </div>
+  </div>
   <div id="wrapper" class="content">
     <div id="map">
         <canvas id="mapCanvas"/>
@@ -21,8 +26,8 @@
         <div>
           <div id="menu" style="width: 100%">
             <div class="btn-group" role="group" aria-label="Basic example">
-              <button type="button" class="btn btn-secondary">Chat</button>
-              <button type="button" class="btn btn-secondary">Images</button>
+              <button type="button" class="btn btn-secondary" id="buttonChat">Chat</button>
+              <button type="button" class="btn btn-secondary" id="buttonImages">Images</button>
               <button type="button" class="btn btn-secondary">Maps</button>
               <button type="button" class="btn btn-secondary">Music</button>
               <button type="button" class="btn btn-secondary">Documents</button>
@@ -44,6 +49,7 @@
 <script type="text/javascript">
 
 window.onload = init;
+var zoom = 1
 var stage;
 var STAGE_WIDTH = 1280;
 var STAGE_HEIGHT = 1280;
@@ -53,14 +59,42 @@ var mouseX = 0;
 var mouseY = 0;
 var gameState;
 var img = null
+var tokens = []
+var draggedToken = null
+var selectedToken = null
+var dragOffsetX = 0
+var dragOffsetY = 0
+var transparentRed = "rgba(255, 0, 0, 0.5)"
 
 function init(){
 	gameState = "loading";
 	// events
 	window.onmousemove = function(event){onMouseMoveHandler(event);}
+  document.getElementById("buttonZoomIn").onclick = function(event){changeZoom(true)}
+  document.getElementById("buttonZoomOut").onclick = function(event){changeZoom(false)}
+
 	initCanvas();
 	gameState = "play";
+
+  dummy = {}
+  dummy.x = 256
+  dummy.y = 256
+  dummy.width = grid_width
+  dummy.height = grid_height
+  dummy.z = 0
+  tokens.push(dummy)
+
   var loopInterval = setInterval(loop, 1000/30);
+}
+
+function changeZoom(zoomIn) {
+  zoom = zoom * (zoomIn ? 2 : 0.5); canvas.width = STAGE_WIDTH * zoom; canvas.height = STAGE_HEIGHT * zoom
+  map = document.getElementById("map")
+  if (canvas.width > map.clientWidth) {
+    map.style.removeProperty("justify-content")
+  } else {
+    map.style.setProperty("justify-content", "center")
+  }
 }
 
 function loop(){
@@ -80,22 +114,33 @@ function draw(){
 	clearStage();
   if (img != null)
     stage.drawImage(img, 0, 0, grid_width, grid_height)
+
+  for (token of tokens) {
+    if (token == selectedToken) {
+      stage.fillStyle = 'green'
+      stage.fillRect(token.x * zoom - 2, token.y * zoom - 2, grid_width * zoom + 4, grid_height * zoom + 4)
+    }
+    stage.fillStyle = 'blue'
+    stage.fillRect(token.x * zoom, token.y * zoom, grid_width * zoom, grid_height * zoom)
+
+  }
+
   drawGrid();
-  stage.fillStyle = 'red'
-  stage.fillRect(mouseX - mouseX % grid_width, mouseY - mouseY % grid_height, grid_width, grid_height)
+  stage.fillStyle = transparentRed
+  stage.fillRect(mouseX - mouseX % (grid_width * zoom), mouseY - mouseY % (grid_height * zoom) , grid_width * zoom, grid_height * zoom)
 }
 
 function drawGrid() {
   stage.beginPath();       // Start a new path
   stage.strokeStyle = 'white'
   for(var i = 0; i < STAGE_HEIGHT / grid_height; i++){
-    stage.moveTo(0, (i + 1) * grid_height );    // Move the pen to (30, 50)
-    stage.lineTo(STAGE_WIDTH, (i + 1) * grid_height);  // Draw a line to (150, 100
+    stage.moveTo(0, (i + 1) * grid_height * zoom );    // Move the pen to (30, 50)
+    stage.lineTo(STAGE_WIDTH * zoom, (i + 1) * grid_height * zoom);  // Draw a line to (150, 100
   }
 
   for(var i = 0; i < STAGE_WIDTH / grid_width; i++){
-    stage.moveTo((i + 1) * grid_width, 0 );    // Move the pen to (30, 50)
-    stage.lineTo((i + 1) * grid_width, STAGE_HEIGHT);  // Draw a line to (150, 100
+    stage.moveTo((i + 1) * grid_width * zoom, 0 );    // Move the pen to (30, 50)
+    stage.lineTo((i + 1) * grid_width * zoom, STAGE_HEIGHT * zoom);  // Draw a line to (150, 100
   }
   stage.stroke();          // Render the path
 }
@@ -107,11 +152,15 @@ function drawGrid() {
 function initCanvas(){
 	canvas = document.getElementById("mapCanvas");
 	context = canvas.getContext('2d');
-	canvas.width=STAGE_WIDTH;
-	canvas.height=STAGE_HEIGHT;
+	canvas.width=STAGE_WIDTH * zoom;
+	canvas.height=STAGE_HEIGHT * zoom;
   canvas.ondrop = function(event){ handleDrop(event)}
   canvas.ondragover = function(event) {allowDrop(event)}
-	// document.body.appendChild(canvas);
+
+  canvas.addEventListener('mousedown', function(event) {canvasMouseDown(event)});
+  canvas.addEventListener('mouseup', function(event) {canvasMouseUp(event)});
+  canvas.addEventListener('mouseleave', function(event) {draggedToken = null});
+
 	stage = context;
   Split(["#map", "#chat"], {
     gutterSize: 5,
@@ -123,6 +172,30 @@ function initCanvas(){
     gutterSize: 5,
     sizes: [80,20]
   });
+}
+
+function canvasMouseDown(event) {
+  var e = new MouseEvent(event);
+  var rect = canvas.getBoundingClientRect();
+	mouseX = e.x - rect.left;
+	mouseY = e.y - rect.top;
+
+  selectedToken = null
+
+  for (token of tokens) {
+    if (mouseX > (token.x * zoom) && mouseX < ((token.x + token.width) * zoom) &&
+          mouseY > (token.y * zoom) && mouseY < ((token.y + token.height) * zoom))  {
+            dragOffsetX = mouseX - token.x * zoom
+            dragOffsetY = mouseY - token.y * zoom
+            draggedToken = token
+            selectedToken = token
+            break
+    }
+  }
+}
+
+function canvasMouseUp(event) {
+  draggedToken = null
 }
 
 function allowDrop(e) {
@@ -148,9 +221,9 @@ function handleDrop(e) {
 * Stage Methods
 */
 function clearStage(){
-	stage.clearRect(0,0,STAGE_WIDTH,STAGE_HEIGHT);
+	stage.clearRect(0,0,STAGE_WIDTH * zoom,STAGE_HEIGHT * zoom);
   stage.fillStyle = 'black'
-  stage.fillRect(0,0,STAGE_WIDTH,STAGE_HEIGHT)
+  stage.fillRect(0,0,STAGE_WIDTH * zoom, STAGE_HEIGHT * zoom)
 }
 /**
 * Mouse Methods
@@ -160,10 +233,13 @@ function getMousePosition(evt){
 	var rect = canvas.getBoundingClientRect();
 	mouseX = e.x - rect.left;
 	mouseY = e.y - rect.top;
-  console.log(canvas.getBoundingClientRect())
 }
 function onMouseMoveHandler(evt){
 	getMousePosition(evt);
+  if (draggedToken != null) {
+    draggedToken.x = Math.min(Math.max((mouseX - dragOffsetX) / zoom, 0), STAGE_WIDTH - draggedToken.width)
+    draggedToken.y = Math.min(Math.max((mouseY - dragOffsetY) / zoom, 0), STAGE_HEIGHT - draggedToken.height)
+  }
 }
 /**
 * MouseEvent Class
