@@ -73,6 +73,10 @@ function init(){
   document.getElementById("buttonZoomIn").onclick = function(event){changeZoom(true)}
   document.getElementById("buttonZoomOut").onclick = function(event){changeZoom(false)}
 
+  img = new Image(grid_width, grid_height)
+  img.src = "javascript-logo.svg"
+  img.rotate = 0
+
 	initCanvas();
 	gameState = "play";
 
@@ -88,7 +92,9 @@ function init(){
 }
 
 function changeZoom(zoomIn) {
-  zoom = zoom * (zoomIn ? 2 : 0.5); canvas.width = STAGE_WIDTH * zoom; canvas.height = STAGE_HEIGHT * zoom
+  zoom = zoom * (zoomIn ? 2 : 0.5);
+  canvas.width = STAGE_WIDTH * zoom;
+  canvas.height = STAGE_HEIGHT * zoom
   map = document.getElementById("map")
   if (canvas.width > map.clientWidth) {
     map.style.removeProperty("justify-content")
@@ -107,13 +113,28 @@ function message(text){
 	document.body.appendChild(tag);
 	tag.innerHTML = text;
 }
+
+function drawImageCenter(image, x, y, cx, cy, scale, rotation) {
+    stage.setTransform(scale, 0, 0, scale, x, y); // sets scale and origin
+    stage.rotate(rotation);
+    stage.drawImage(image, -cx, -cy, img.width * zoom, img.height * zoom);
+}
+
+function drawToken(token)  {
+  drawImageCenter(token, token.width / 2 * zoom, token.height / 2 * zoom,
+    token.width / 2 * zoom, token.height / 2 * zoom, 1, token.rotate * Math.PI / 180)
+  stage.setTransform(1,0,0,1,0,0);
+}
+
 /**
 * Drawing -- updates to graphics on screen
 */
-function draw(){
+function draw() {
 	clearStage();
-  if (img != null)
-    stage.drawImage(img, 0, 0, grid_width, grid_height)
+  if (img != null) {
+    img.rotate = (img.rotate + 5) % 360;
+    drawToken(img)
+  }
 
   for (token of tokens) {
     if (token == selectedToken) {
@@ -210,6 +231,7 @@ function handleDrop(e) {
   if (e.stopPropagation) {
     e.stopPropagation(); // stops the browser from redirecting.
   }
+  console.log(url)
   img = new Image()
   img.src = url
   // See the section on the DataTransfer object.
