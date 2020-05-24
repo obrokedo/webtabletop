@@ -26,15 +26,6 @@ function init(){
   document.getElementById("buttonZoomIn").onclick = function(event){changeZoom(true)}
   document.getElementById("buttonZoomOut").onclick = function(event){changeZoom(false)}
 
-  img = {}
-  img.img = new Image(grid_width, grid_height)
-  img.img.src = "javascript-logo.svg"
-  img.x = 0
-  img.y = 0
-  img.width = grid_width
-  img.height = grid_height
-  img.rotate = 0
-
   rotateImg = new Image()
   rotateImg.src = "rotate.png"
 
@@ -55,6 +46,34 @@ function init(){
   var loopInterval = setInterval(loop, 1000/30);
 }
 
+function initCanvas(){
+	canvas = document.getElementById("mapCanvas");
+	context = canvas.getContext('2d');
+	canvas.width=STAGE_WIDTH * zoom;
+	canvas.height=STAGE_HEIGHT * zoom;
+  canvas.ondrop = function(event){ handleDrop(event)}
+  canvas.ondragover = function(event) {allowDrop(event)}
+
+  canvas.addEventListener('mousedown', function(event) {canvasMouseDown(event)});
+  canvas.addEventListener('mouseup', function(event) {canvasMouseUp(event)});
+  canvas.addEventListener('mouseleave', function(event) {draggedToken = null});
+	canvas.addEventListener("contextmenu", function(e) {
+  	e.preventDefault();
+	});
+
+	stage = context;
+  Split(["#map", "#chat"], {
+    gutterSize: 5,
+    sizes: [80,20]
+  });
+
+  Split(["#chatOut", "#chatIn"], {
+    direction: 'vertical',
+    gutterSize: 5,
+    sizes: [80,20]
+  });
+}
+
 function changeZoom(zoomIn) {
   zoom = zoom * (zoomIn ? 2 : 0.5);
   canvas.width = STAGE_WIDTH * zoom;
@@ -71,23 +90,20 @@ function loop(){
 	draw();
 }
 
-
-function message(text){
-	tag = document.createElement("h1");
-	document.body.appendChild(tag);
-	tag.innerHTML = text;
-}
-
-function drawImageCenter(token, x, y, cx, cy, scale, rotation) {
-    stage.setTransform(scale, 0, 0, scale, x, y); // sets scale and origin
+function drawImageCenter(token, x, y, cx, cy, rotation) {
+    stage.setTransform(zoom, 0, 0, zoom, x * zoom, y * zoom); // sets scale and origin
     stage.rotate(rotation);
-    stage.drawImage(token.img, -cx, -cy, token.width * zoom, token.height * zoom);
+    stage.drawImage(token.img, -cx, -cy, token.width, token.height);
 }
 
 function drawToken(token)  {
-  drawImageCenter(token, (token.x + token.width / 2) * zoom, (token.y + token.height / 2) * zoom,
-    token.width / 2 * zoom, token.height / 2 * zoom, 1, token.rotate * Math.PI / 180)
-  stage.setTransform(1,0,0,1,0,0);
+	if (token.rotate != 0) {
+  	drawImageCenter(token, (token.x + token.width / 2), (token.y + token.height / 2),
+    	token.width / 2, token.height / 2, token.rotate * Math.PI / 180)
+  	stage.setTransform(zoom,0,0,zoom,0,0);
+	} else {
+		stage.drawImage(token.img, token.x, token.y, token.width, token.height);
+	}
 }
 
 /**
@@ -95,98 +111,82 @@ function drawToken(token)  {
 */
 function draw() {
 	clearStage();
-  if (img != null) {
-    img.rotate = (img.rotate + 5) % 360;
-    drawToken(img)
-  }
+	stage.setTransform(zoom,0,0,zoom,0,0);
 
-  for (token of tokens) {
-    if (token == selectedToken) {
-      stage.fillStyle = 'green'
-      stage.fillRect(token.x * zoom - SELECTED_BORDER_SIZE, token.y * zoom - SELECTED_BORDER_SIZE,
-        token.width * zoom + SELECTED_BORDER_SIZE * 2, token.height * zoom + SELECTED_BORDER_SIZE * 2)
-      stage.drawImage(rotateImg, (token.x + token.width) * zoom + 5, (token.y + token.height) * zoom + 5)
-    }
-
-    drawToken(token)
-  }
+  drawTokens();
 
   drawGrid();
 
   if (rotating != null) {
-    stage.beginPath();       // Start a new path
-    stage.strokeStyle = 'black'
-    selectedCenterX = (selectedToken.x + selectedToken.width / 2) * zoom
-    selectedCenterY = (selectedToken.y + selectedToken.height / 2) * zoom
-    stage.moveTo(selectedCenterX, selectedCenterY);    // Move the pen to (30, 50)
-    stage.lineTo(mouseX, mouseY);  // Draw a line to (150, 100
-
-    stage.moveTo(selectedCenterX, selectedCenterY);    // Move the pen to (30, 50)
-    stage.lineTo(rotating.startX, rotating.startY);  // Draw a line to (150, 100
-    stage.stroke()
-    console.log((Math.atan2(mouseY - selectedCenterY, mouseX - selectedCenterX) - Math.atan2(rotating.startY - selectedCenterY, (rotating.startX - selectedCenterX))) * 180 / Math.PI)
+    rotateSelected()
   }
 
   stage.fillStyle = transparentRed
-  stage.fillRect(mouseX - mouseX % (grid_width * zoom), mouseY - mouseY % (grid_height * zoom) , grid_width * zoom, grid_height * zoom)
+  stage.fillRect(mouseX - mouseX % (grid_width), mouseY - mouseY % (grid_height) , grid_width, grid_height)
+}
+
+function drawTokens() {
+	for (token of tokens) {
+    if (token == selectedToken) {
+      stage.strokeStyle = 'blue'
+			stage.lineWidth = "3"
+      stage.strokeRect(token.x - SELECTED_BORDER_SIZE, token.y - SELECTED_BORDER_SIZE,
+        token.width + SELECTED_BORDER_SIZE * 2, token.height + SELECTED_BORDER_SIZE * 2)
+      stage.drawImage(rotateImg, (token.x + token.width) + 5, (token.y + token.height) + 5)
+    }
+
+    drawToken(token)
+  }
 }
 
 function drawGrid() {
-  stage.beginPath();       // Start a new path
+  stage.beginPath();
+	stage.lineWidth = "1"
   stage.strokeStyle = 'black'
   for(var i = 0; i < STAGE_HEIGHT / grid_height; i++){
-    stage.moveTo(0, (i + 1) * grid_height * zoom );    // Move the pen to (30, 50)
-    stage.lineTo(STAGE_WIDTH * zoom, (i + 1) * grid_height * zoom);  // Draw a line to (150, 100
+    stage.moveTo(0, (i + 1) * grid_height );
+    stage.lineTo(STAGE_WIDTH, (i + 1) * grid_height);
   }
 
   for(var i = 0; i < STAGE_WIDTH / grid_width; i++){
-    stage.moveTo((i + 1) * grid_width * zoom, 0 );    // Move the pen to (30, 50)
-    stage.lineTo((i + 1) * grid_width * zoom, STAGE_HEIGHT * zoom);  // Draw a line to (150, 100
+    stage.moveTo((i + 1) * grid_width, 0 );
+    stage.lineTo((i + 1) * grid_width, STAGE_HEIGHT);
   }
-  stage.stroke();          // Render the path
+  stage.stroke();
+}
+
+function rotateSelected() {
+	selectedCenterX = (selectedToken.x + selectedToken.width / 2)
+	selectedCenterY = (selectedToken.y + selectedToken.height / 2)
+
+	angle = (Math.atan2(mouseY - selectedCenterY, mouseX - selectedCenterX) -
+		Math.atan2(rotating.startY - selectedCenterY, (rotating.startX - selectedCenterX))) * 180 / Math.PI
+	console.log(angle)
+	selectedToken.rotate = (rotating.startRot + angle) % 360
+	console.log(selectedToken.rotate)
 }
 
 
-/**
-* Canvas
-*/
-function initCanvas(){
-	canvas = document.getElementById("mapCanvas");
-	context = canvas.getContext('2d');
-	canvas.width=STAGE_WIDTH * zoom;
-	canvas.height=STAGE_HEIGHT * zoom;
-  canvas.ondrop = function(event){ handleDrop(event)}
-  canvas.ondragover = function(event) {allowDrop(event)}
-
-  canvas.addEventListener('mousedown', function(event) {canvasMouseDown(event)});
-  canvas.addEventListener('mouseup', function(event) {canvasMouseUp(event)});
-  canvas.addEventListener('mouseleave', function(event) {draggedToken = null});
-
-	stage = context;
-  Split(["#map", "#chat"], {
-    gutterSize: 5,
-    sizes: [80,20]
-  });
-
-  Split(["#chatOut", "#chatIn"], {
-    direction: 'vertical',
-    gutterSize: 5,
-    sizes: [80,20]
-  });
-}
 
 function canvasMouseDown(event) {
-  var e = new MouseEvent(event);
-  var rect = canvas.getBoundingClientRect();
-	mouseX = e.x - rect.left;
-	mouseY = e.y - rect.top;
+	if (rotating) {
+		if (event.button == 0) {
+			rotating = null
+		} else if (event.button == 2) {
+			window.event.returnValue = false;
+			selectedToken.rotate = rotating.startRot
+			rotating = null
+		}
+		return
+	}
 
+	// Check to see if we are clicking on the rotate button of the selected token
   if (selectedToken != null) {
-    if (mouseX > (selectedToken.x + selectedToken.width) * zoom + 5
-     && mouseY > (selectedToken.y + selectedToken.height) * zoom + 5
-     && mouseX < (selectedToken.x + selectedToken.width) * zoom + 5 + rotateImg.width
-     && mouseY < (selectedToken.y + selectedToken.height) * zoom + 5 + rotateImg.height)  {
-       rotating = {startX: mouseX, startY: mouseY, startRot: selectedToken.rotation}
+    if (mouseX > (selectedToken.x + selectedToken.width)+ 5
+     && mouseY > (selectedToken.y + selectedToken.height) + 5
+     && mouseX < (selectedToken.x + selectedToken.width) + 5 + rotateImg.width
+     && mouseY < (selectedToken.y + selectedToken.height) + 5 + rotateImg.height)  {
+       rotating = {startX: mouseX, startY: mouseY, startRot: selectedToken.rotate}
        return
      }
   }
@@ -194,10 +194,10 @@ function canvasMouseDown(event) {
   selectedToken = null
 
   for (token of tokens) {
-    if (mouseX > (token.x * zoom) && mouseX < ((token.x + token.width) * zoom) &&
-          mouseY > (token.y * zoom) && mouseY < ((token.y + token.height) * zoom))  {
-            dragOffsetX = mouseX - token.x * zoom
-            dragOffsetY = mouseY - token.y * zoom
+    if (mouseX > (token.x) && mouseX < ((token.x + token.width)) &&
+          mouseY > (token.y) && mouseY < ((token.y + token.height)))  {
+            dragOffsetX = mouseX - token.x
+            dragOffsetY = mouseY - token.y
             draggedToken = token
             selectedToken = token
             break
@@ -233,9 +233,9 @@ function handleDrop(e) {
 * Stage Methods
 */
 function clearStage(){
-	stage.clearRect(0,0,STAGE_WIDTH * zoom,STAGE_HEIGHT * zoom);
+	stage.clearRect(0,0,STAGE_WIDTH,STAGE_HEIGHT);
   stage.fillStyle = 'white'
-  stage.fillRect(0,0,STAGE_WIDTH * zoom, STAGE_HEIGHT * zoom)
+  stage.fillRect(0,0,STAGE_WIDTH, STAGE_HEIGHT)
 }
 /**
 * Mouse Methods
@@ -243,8 +243,8 @@ function clearStage(){
 function getMousePosition(evt){
 	var e = new MouseEvent(evt);
 	var rect = canvas.getBoundingClientRect();
-	mouseX = e.x - rect.left;
-	mouseY = e.y - rect.top;
+	mouseX = (e.x - rect.left) / zoom;
+	mouseY = (e.y - rect.top) / zoom;
 }
 function onMouseMoveHandler(evt){
 	getMousePosition(evt);
