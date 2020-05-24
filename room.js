@@ -18,6 +18,7 @@ var transparentRed = "rgba(255, 0, 0, 0.5)"
 var rotateImg;
 var rotating = null
 var SELECTED_BORDER_SIZE = 4
+var altPressed = false
 
 function init(){
 	gameState = "loading";
@@ -25,6 +26,8 @@ function init(){
 	window.onmousemove = function(event){onMouseMoveHandler(event);}
   document.getElementById("buttonZoomIn").onclick = function(event){changeZoom(true)}
   document.getElementById("buttonZoomOut").onclick = function(event){changeZoom(false)}
+	window.addEventListener('keydown', function(event) {handleKeyDown(event)});
+  window.addEventListener('keyup', function(event) {handleKeyUp(event)});
 
   rotateImg = new Image()
   rotateImg.src = "rotate.png"
@@ -44,6 +47,19 @@ function init(){
   tokens.push(dummy)
 
   var loopInterval = setInterval(loop, 1000/30);
+}
+
+function handleKeyDown(event) {
+	if (event.key === 'Alt') {
+		event.preventDefault()
+		altPressed = true
+	}
+}
+
+function handleKeyUp(event) {
+	if (event.key === 'Alt') {
+		altPressed = false
+	}
 }
 
 function initCanvas(){
@@ -161,9 +177,10 @@ function rotateSelected() {
 
 	angle = (Math.atan2(mouseY - selectedCenterY, mouseX - selectedCenterX) -
 		Math.atan2(rotating.startY - selectedCenterY, (rotating.startX - selectedCenterX))) * 180 / Math.PI
-	console.log(angle)
-	selectedToken.rotate = (rotating.startRot + angle) % 360
-	console.log(selectedToken.rotate)
+	if (!altPressed)
+		selectedToken.rotate = ((rotating.startRot + angle) - ((rotating.startRot + angle) % 45)) % 360
+	else
+		selectedToken.rotate = (rotating.startRot + angle) % 360
 }
 
 
@@ -249,8 +266,20 @@ function getMousePosition(evt){
 function onMouseMoveHandler(evt){
 	getMousePosition(evt);
   if (draggedToken != null) {
-    draggedToken.x = Math.min(Math.max((mouseX - dragOffsetX) / zoom, 0), STAGE_WIDTH - draggedToken.width)
-    draggedToken.y = Math.min(Math.max((mouseY - dragOffsetY) / zoom, 0), STAGE_HEIGHT - draggedToken.height)
+
+		if (altPressed) {
+			newX = mouseX - dragOffsetX
+			newY = mouseY - dragOffsetY
+		} else {
+			newX = mouseX
+			newX = newX - (newX % grid_width)
+
+			newY = mouseY
+			newY = newY - (newY % grid_height)
+		}
+
+    draggedToken.x = Math.min(Math.max((newX), 0), STAGE_WIDTH - draggedToken.width)
+    draggedToken.y = Math.min(Math.max((newY), 0), STAGE_HEIGHT - draggedToken.height)
   }
 }
 /**
