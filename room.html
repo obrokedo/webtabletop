@@ -65,6 +65,9 @@ var selectedToken = null
 var dragOffsetX = 0
 var dragOffsetY = 0
 var transparentRed = "rgba(255, 0, 0, 0.5)"
+var rotateImg;
+var rotating = null
+var SELECTED_BORDER_SIZE = 4
 
 function init(){
 	gameState = "loading";
@@ -73,19 +76,30 @@ function init(){
   document.getElementById("buttonZoomIn").onclick = function(event){changeZoom(true)}
   document.getElementById("buttonZoomOut").onclick = function(event){changeZoom(false)}
 
-  img = new Image(grid_width, grid_height)
-  img.src = "javascript-logo.svg"
+  img = {}
+  img.img = new Image(grid_width, grid_height)
+  img.img.src = "javascript-logo.svg"
+  img.x = 0
+  img.y = 0
+  img.width = grid_width
+  img.height = grid_height
   img.rotate = 0
+
+  rotateImg = new Image()
+  rotateImg.src = "rotate.png"
 
 	initCanvas();
 	gameState = "play";
 
   dummy = {}
+  dummy.img = new Image()
+  dummy.img.src = "javascript-logo.svg"
   dummy.x = 256
   dummy.y = 256
   dummy.width = grid_width
   dummy.height = grid_height
   dummy.z = 0
+  dummy.rotate = 0
   tokens.push(dummy)
 
   var loopInterval = setInterval(loop, 1000/30);
@@ -114,14 +128,14 @@ function message(text){
 	tag.innerHTML = text;
 }
 
-function drawImageCenter(image, x, y, cx, cy, scale, rotation) {
+function drawImageCenter(token, x, y, cx, cy, scale, rotation) {
     stage.setTransform(scale, 0, 0, scale, x, y); // sets scale and origin
     stage.rotate(rotation);
-    stage.drawImage(image, -cx, -cy, img.width * zoom, img.height * zoom);
+    stage.drawImage(token.img, -cx, -cy, token.width * zoom, token.height * zoom);
 }
 
 function drawToken(token)  {
-  drawImageCenter(token, token.width / 2 * zoom, token.height / 2 * zoom,
+  drawImageCenter(token, (token.x + token.width / 2) * zoom, (token.y + token.height / 2) * zoom,
     token.width / 2 * zoom, token.height / 2 * zoom, 1, token.rotate * Math.PI / 180)
   stage.setTransform(1,0,0,1,0,0);
 }
@@ -139,21 +153,37 @@ function draw() {
   for (token of tokens) {
     if (token == selectedToken) {
       stage.fillStyle = 'green'
-      stage.fillRect(token.x * zoom - 2, token.y * zoom - 2, grid_width * zoom + 4, grid_height * zoom + 4)
+      stage.fillRect(token.x * zoom - SELECTED_BORDER_SIZE, token.y * zoom - SELECTED_BORDER_SIZE,
+        token.width * zoom + SELECTED_BORDER_SIZE * 2, token.height * zoom + SELECTED_BORDER_SIZE * 2)
+      stage.drawImage(rotateImg, (token.x + token.width) * zoom + 5, (token.y + token.height) * zoom + 5)
     }
-    stage.fillStyle = 'blue'
-    stage.fillRect(token.x * zoom, token.y * zoom, grid_width * zoom, grid_height * zoom)
 
+    drawToken(token)
   }
 
   drawGrid();
+
+  if (rotating != null) {
+    stage.beginPath();       // Start a new path
+    stage.strokeStyle = 'black'
+    selectedCenterX = (selectedToken.x + selectedToken.width / 2) * zoom
+    selectedCenterY = (selectedToken.y + selectedToken.height / 2) * zoom
+    stage.moveTo(selectedCenterX, selectedCenterY);    // Move the pen to (30, 50)
+    stage.lineTo(mouseX, mouseY);  // Draw a line to (150, 100
+
+    stage.moveTo(selectedCenterX, selectedCenterY);    // Move the pen to (30, 50)
+    stage.lineTo(rotating.startX, rotating.startY);  // Draw a line to (150, 100
+    stage.stroke()
+    console.log((Math.atan2(mouseY - selectedCenterY, mouseX - selectedCenterX) - Math.atan2(rotating.startY - selectedCenterY, (rotating.startX - selectedCenterX))) * 180 / Math.PI)
+  }
+
   stage.fillStyle = transparentRed
   stage.fillRect(mouseX - mouseX % (grid_width * zoom), mouseY - mouseY % (grid_height * zoom) , grid_width * zoom, grid_height * zoom)
 }
 
 function drawGrid() {
   stage.beginPath();       // Start a new path
-  stage.strokeStyle = 'white'
+  stage.strokeStyle = 'black'
   for(var i = 0; i < STAGE_HEIGHT / grid_height; i++){
     stage.moveTo(0, (i + 1) * grid_height * zoom );    // Move the pen to (30, 50)
     stage.lineTo(STAGE_WIDTH * zoom, (i + 1) * grid_height * zoom);  // Draw a line to (150, 100
@@ -201,6 +231,16 @@ function canvasMouseDown(event) {
 	mouseX = e.x - rect.left;
 	mouseY = e.y - rect.top;
 
+  if (selectedToken != null) {
+    if (mouseX > (selectedToken.x + selectedToken.width) * zoom + 5
+     && mouseY > (selectedToken.y + selectedToken.height) * zoom + 5
+     && mouseX < (selectedToken.x + selectedToken.width) * zoom + 5 + rotateImg.width
+     && mouseY < (selectedToken.y + selectedToken.height) * zoom + 5 + rotateImg.height)  {
+       rotating = {startX: mouseX, startY: mouseY, startRot: selectedToken.rotation}
+       return
+     }
+  }
+
   selectedToken = null
 
   for (token of tokens) {
@@ -244,7 +284,7 @@ function handleDrop(e) {
 */
 function clearStage(){
 	stage.clearRect(0,0,STAGE_WIDTH * zoom,STAGE_HEIGHT * zoom);
-  stage.fillStyle = 'black'
+  stage.fillStyle = 'white'
   stage.fillRect(0,0,STAGE_WIDTH * zoom, STAGE_HEIGHT * zoom)
 }
 /**
