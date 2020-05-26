@@ -19,6 +19,7 @@ var rotateImg;
 var rotating = null
 var SELECTED_BORDER_SIZE = 4
 var altPressed = false
+var socket = null;
 
 function init(){
 	gameState = "loading";
@@ -35,24 +36,26 @@ function init(){
 	initCanvas();
 	gameState = "play";
 
-  dummy = {}
-  dummy.img = new Image()
-  dummy.img.src = "javascript-logo.svg"
-  dummy.x = 256
-  dummy.y = 256
-  dummy.width = grid_width
-  dummy.height = grid_height
-  dummy.z = 0
-  dummy.rotate = 0
-  tokens.push(dummy)
+
 
   var loopInterval = setInterval(loop, 1000/30);
+
+	socket = io();
+	socket.on('newtoken', (msg) => {
+		msg.img = new Image()
+	  msg.img.src = msg.imgName
+		tokens.push(msg)
+	});
 }
 
 function handleKeyDown(event) {
 	if (event.key === 'Alt') {
 		event.preventDefault()
 		altPressed = true
+	}
+
+	if (event.key === "n") {
+		socket.emit("rotate","")
 	}
 }
 
@@ -62,7 +65,7 @@ function handleKeyUp(event) {
 	}
 }
 
-function initCanvas(){
+function initCanvas() {
 	canvas = document.getElementById("mapCanvas");
 	context = canvas.getContext('2d');
 	canvas.width=STAGE_WIDTH * zoom;
@@ -189,6 +192,7 @@ function canvasMouseDown(event) {
 	if (rotating) {
 		if (event.button == 0) {
 			rotating = null
+			socket.emit("rotate","dogboy")
 		} else if (event.button == 2) {
 			window.event.returnValue = false;
 			selectedToken.rotate = rotating.startRot
