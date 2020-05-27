@@ -1,5 +1,5 @@
 # WebTableTop
-A web application for playing tabletop games through a browser.
+A web application for playing tabletop games through a browser. WebTableTop relies on an authorative server to guarentee client state synchronization and provides hosts the ability to specify the amount of "trust" each client should have.
 
 ## Architecture
 TODO
