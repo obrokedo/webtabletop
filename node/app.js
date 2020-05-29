@@ -6,6 +6,10 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/tabletop', (req, res) => {
+  res.sendFile(__dirname + '/client-side/tabletop.html');
+});
+
 io.on('connection', (socket) => {
   console.log('a user connected');
 });
