@@ -1,26 +1,18 @@
 import React from 'react';
 import Split from 'split-js';
+import propTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { fetchMessages } from '../../actions/chatActions'
+import { fetchMessages, postMessage } from '../../actions/chatActions'
 
 class Chat extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      currentUser: 'Roberto',
-      messages: [
-        {
-          msg: 'check-it',
-          sender: 'Cinderella',
-          timestamp: 123456
-        },
-        {
-          msg: 'check-it',
-          sender: 'Cinderella',
-          timestamp: 123457
-        }
-      ],
+      currentUser: {
+        name: 'Roberto',
+        email: 'r.oberto@check-it.com'
+      },
       currentMessage: ''
     };
     this.onChange = this.onChange.bind(this);
@@ -41,16 +33,14 @@ class Chat extends React.Component {
 
   onSubmit(e) {
     e.preventDefault();
-
-    const newMessage = this.state.currentMessage;
+    const submittedMessage = this.state.currentMessage;
+    const newMessage = {
+      id: Date.now(),
+      body: submittedMessage,
+      email: this.state.currentUser.email
+    };
+    this.props.postMessage(newMessage);
     this.setState({
-        messages: this.state.messages.concat(
-          {
-            msg: newMessage,
-            sender: this.state.currentUser,
-            timestamp: e.timeStamp
-          }
-        ),
       currentMessage: ''
     });
   }
@@ -93,8 +83,14 @@ class Chat extends React.Component {
   }
 }
 
+Chat.propTypes = {
+  fetchMessages: propTypes.func.isRequired,
+  postMessage: propTypes.func.isRequired,
+  messages: propTypes.array.isRequired
+}
+
 const mapStateToProps = state => ({
   messages: state.chatData.messages
 });
 
-export default connect(mapStateToProps, { fetchMessages })(Chat);
+export default connect(mapStateToProps, { fetchMessages, postMessage })(Chat);
