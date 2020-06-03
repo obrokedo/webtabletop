@@ -1,42 +1,100 @@
 import React from 'react';
 import Split from 'split-js';
+import { connect } from 'react-redux';
+import { fetchMessages } from '../../actions/chatActions'
 
 class Chat extends React.Component {
+  constructor(props) {
+    super(props);
 
-    componentDidMount() {
-      Split(["#chatOut", "#chatIn"], {
-        direction: 'vertical',
-        gutterSize: 5,
-        sizes: [80,20]
-      });
-    }
-
-    render() {
-      return (
-        <div id="chat">
-          <div id="chatOut"  className="content">
-            <div>
-              <div id="menu" style={{"width": "100%"}}>
-                <div className="btn-group" role="group" aria-label="Basic example">
-                  <button type="button" className="btn btn-secondary" id="buttonChat">Chat</button>
-                  <button type="button" className="btn btn-secondary" id="buttonImages">Images</button>
-                  <button type="button" className="btn btn-secondary">Maps</button>
-                  <button type="button" className="btn btn-secondary">Music</button>
-                  <button type="button" className="btn btn-secondary">Documents</button>
-                  <button type="button" className="btn btn-secondary">Settings</button>
-                </div>
-              </div>
-              <div style={{"width": "100%"}}>
-                "On the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse pains."
-              </div>
-            </div>
-          </div>
-          <div id="chatIn"  className="content">
-            <textarea id="chatInput"></textarea>
-          </div>
-      </div>
-      );
-    }
+    this.state = {
+      currentUser: 'Roberto',
+      messages: [
+        {
+          msg: 'check-it',
+          sender: 'Cinderella',
+          timestamp: 123456
+        },
+        {
+          msg: 'check-it',
+          sender: 'Cinderella',
+          timestamp: 123457
+        }
+      ],
+      currentMessage: ''
+    };
+    this.onChange = this.onChange.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
   }
 
-export default Chat;
+  componentWillMount() {
+    this.props.fetchMessages();
+  }
+
+  componentDidMount() {
+    Split(["#chatOut", "#chatIn"], {
+      direction: 'vertical',
+      gutterSize: 5,
+      sizes: [80,20]
+    });
+  }
+
+  onSubmit(e) {
+    e.preventDefault();
+
+    const newMessage = this.state.currentMessage;
+    this.setState({
+        messages: this.state.messages.concat(
+          {
+            msg: newMessage,
+            sender: this.state.currentUser,
+            timestamp: e.timeStamp
+          }
+        ),
+      currentMessage: ''
+    });
+  }
+
+  onChange(e) {
+    this.setState({currentMessage: e.target.value});
+  }
+
+  render() {
+    const displayMessages = this.props.messages.map( message => (
+      <div key={message.id}>
+        <label>{message.email}:</label>
+        <p>{message.body}</p>
+      </div>
+    ));
+
+    return (
+      <div id="chat">
+        <div id="chatOut"  className="content">
+          <div>
+            <div id="menu" style={{"width": "100%"}}>
+              <div className="btn-group" role="group" aria-label="Basic example">
+                <button type="button" className="btn btn-secondary" id="buttonChat">Chat</button>
+                <button type="button" className="btn btn-secondary" id="buttonImages">Images</button>
+                <button type="button" className="btn btn-secondary">Maps</button>
+                <button type="button" className="btn btn-secondary">Music</button>
+                <button type="button" className="btn btn-secondary">Documents</button>
+                <button type="button" className="btn btn-secondary">Settings</button>
+              </div>
+            </div>
+           <div>{displayMessages}</div>
+          </div>
+        </div>
+        <form id="chatIn"  className="content" onSubmit={this.onSubmit}>
+          <textarea id="chatInput" onChange={this.onChange} name="messageText" value={this.state.currentMessage}></textarea>
+          <button type="submit" htmlFor="chatIn">Submit</button>
+        </form>
+    </div>
+    );
+  }
+}
+
+const mapStateToProps = state => ({
+  messages: state.chatData.messages
+});
+
+export default connect(mapStateToProps, { fetchMessages })(Chat);

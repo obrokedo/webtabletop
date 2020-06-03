@@ -4,6 +4,8 @@ import Chat from './features/chat/chat'
 import PlayArea from './features/play-area/play-area';
 import Split from 'split-js';
 import './universal';
+import { Provider }  from 'react-redux';
+import store from './store';
 
 class TableTopApp extends React.Component {
 
@@ -16,10 +18,12 @@ class TableTopApp extends React.Component {
   }
 
   render() {
-    return <div id="wrapper" className="content">
-      <PlayArea />
-      <Chat />
-    </div>
+    return <Provider store={store}>
+      <div id="wrapper" className="content">
+        <PlayArea />
+        <Chat />
+      </div>
+    </Provider>
   }
 }
 
