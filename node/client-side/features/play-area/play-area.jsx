@@ -32,6 +32,7 @@ export default class PlayArea extends Component {
         this.canvasDragOver = this.canvasDragOver.bind(this);
         this.mouseWheel = this.mouseWheel.bind(this);
         this.draw = this.draw.bind(this);
+        this.onMouseMove = this.onMouseMove.bind(this);
     }
 
     componentDidMount() {
@@ -51,13 +52,14 @@ export default class PlayArea extends Component {
         // canvas.addEventListener("contextmenu", function(e) {
         //     e.preventDefault();
         // });
-        setInterval(() => this.draw(), 10000/30);
+        setInterval(() => this.draw(), 1000/30);
     }
 
     /**
     *----- CANVAS DRAWING ----
     */
     draw() {
+        this.clearStage();
         this.state.stage.setTransform(this.state.zoom,0,0,this.state.zoom,0,0);
         this.drawGrid();
 
@@ -83,6 +85,33 @@ export default class PlayArea extends Component {
              this.state.stage.lineTo((i + 1) * this.state.grid_width, this.state.STAGE_HEIGHT);
         }
         this.state.stage.stroke();
+    }
+
+    /**
+    * Stage Methods
+    */
+    clearStage() {
+        this.state.stage.clearRect(0, 0, this.state.STAGE_WIDTH, this.state.STAGE_HEIGHT);
+        this.state.stage.fillStyle = 'white'
+        this.state.stage.fillRect(0, 0, this.state.STAGE_WIDTH, this.state.STAGE_HEIGHT);
+    }
+
+
+    changeZoom(zoomIn) {
+        const newZoom = this.state.zoom * (zoomIn ? 1.25 : 0.75);
+        this.setState({
+            zoom: newZoom
+        });
+
+        const canvas = this.refs.canvas;
+        canvas.width = this.state.STAGE_WIDTH * this.state.zoom;
+        canvas.height = this.state.STAGE_HEIGHT * this.state.zoom;
+        const map = document.getElementById("map");
+        if (canvas.width > map.clientWidth) {
+            map.style.removeProperty("justify-content")
+        } else {
+            map.style.setProperty("justify-content", "center")
+        }
     }
 
     /**
@@ -113,8 +142,17 @@ export default class PlayArea extends Component {
         console.log('drop over canvas', e);
     }
 
+    // TODO - this doesn't work that well. maybe go back to buttons
     mouseWheel(e) {
-        console.log('mouse wheel', e)
+        e.preventDefault();
+        this.changeZoom(e.deltaY < 0);
+    }
+
+    onMouseMove(e) {
+        this.setState({
+            mouseX: e.clientX,
+            mouseY: e.clientY
+        })
     }
 
     render() {
@@ -130,6 +168,7 @@ export default class PlayArea extends Component {
                     onDrop={this.dropOnCanvas}
                     onDragOver={this.canvasDragOver}
                     onWheel={this.mouseWheel}
+                    onMouseMove={this.onMouseMove}
                 />
             </div>
         )
