@@ -19,11 +19,8 @@ class Chat extends React.Component {
     this.onSubmit = this.onSubmit.bind(this);
   }
 
-  componentWillMount() {
-    this.props.fetchMessages();
-  }
-
   componentDidMount() {
+    this.props.fetchMessages();
     Split(["#chatOut", "#chatIn"], {
       direction: 'vertical',
       gutterSize: 5,
