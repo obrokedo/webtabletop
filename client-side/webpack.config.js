@@ -5,7 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const isDevelopment = true;
 
 module.exports = {
-    entry: './client-side/app.js',
+    entry: './app.js',
     module: {
       rules: [
         {
@@ -53,7 +53,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './client-side/tabletop.html'
+            template: './tabletop.html'
         }),
         new MiniCssExtractPlugin({
           filename: isDevelopment ? '[name].css' : '[name].[hash].css',
