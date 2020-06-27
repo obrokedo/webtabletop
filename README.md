@@ -3,11 +3,11 @@ A web application for playing tabletop games through a browser. WebTableTop reli
 
 ## Architecture
 TODO
-- **socket.io** - Persistent connection between webclient and application server. 
+- **socket.io** - Persistent connection between webclient and application server.
 - **react** or **svelte**
 - **nodejs** - Application server implementing socket.io to communicate game state with the browser and using express to serve static resources. Stateless (storage via postgresql or reddis)
 - **npm** - Dependency management
-- **postgresql** - Long term game state storage 
+- **postgresql** - Long term game state storage
 - **reddis** - Potentially shortterm (cachelike) game state storage
 - **webrtc** - Voice and video plugin
 
@@ -21,7 +21,7 @@ web browser
 
 
 ### Building the application server
-After cloning this repository navigate to the `node` directory. The `package.json` describes which plugins will be installed for the node server as well as the `app.js` entrypoint.
+After cloning this repository navigate to the `node` directory. The `package.json` describes which plugins will be installed for the node server as well as the `app.js` entrypoint. Prior to starting the server, Docker will also compile static assets and place them into the container in the `/dist` directory.
 
 **To build the required images:**
 
