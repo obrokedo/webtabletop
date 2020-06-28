@@ -19,7 +19,7 @@ var rotateImg;
 var rotating = null
 var SELECTED_BORDER_SIZE = 4
 var altPressed = false
-var socket = null;
+var client = new Client(this)
 
 function init(){
 	gameState = "loading";
@@ -36,16 +36,7 @@ function init(){
 	initCanvas();
 	gameState = "play";
 
-
-
   var loopInterval = setInterval(loop, 1000/30);
-
-	socket = io();
-	socket.on('newtoken', (msg) => {
-		msg.img = new Image()
-	  msg.img.src = msg.imgName
-		tokens.push(msg)
-	});
 }
 
 function handleKeyDown(event) {
@@ -55,7 +46,9 @@ function handleKeyDown(event) {
 	}
 
 	if (event.key === "n") {
-		socket.emit("rotate","")
+	 request = {}
+	 request.path = "javascript-logo.svg"
+	 client.emit("rotate", request)
 	}
 }
 
@@ -192,7 +185,7 @@ function canvasMouseDown(event) {
 	if (rotating) {
 		if (event.button == 0) {
 			rotating = null
-			socket.emit("rotate","dogboy")
+			client.emit("rotate","dogboy")
 		} else if (event.button == 2) {
 			window.event.returnValue = false;
 			selectedToken.rotate = rotating.startRot

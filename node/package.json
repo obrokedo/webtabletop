@@ -21,6 +21,8 @@
   "dependencies" : {
       "socket.io" : ">=2.3.0",
       "pg" : ">=8.2.1",
-      "express": ">0.0.0"
+      "express": ">0.0.0",
+      "redis":">=3.0.2"
+
   }
 }
