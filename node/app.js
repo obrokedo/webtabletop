@@ -1,17 +1,19 @@
 var express = require('express');
 var app = express();
 var http = require('http').createServer(app);
+var path = require('path');
 var io = require('socket.io')(http);
 const redis = require("redis");
 const client = redis.createClient("redis://192.168.99.100:6379");
 
 var tokenIdCount = 1;
 
-app.use(express.static('public'));
-
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/room.html');
+  res.sendFile(__dirname + '/dist/index.html');
 });
+
+// Express Middleware for serving static files
+app.use(express.static(path.join(__dirname, 'dist')));
 
 io.on('connection', (socket) => {
   console.log('a user connected');
