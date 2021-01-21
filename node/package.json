@@ -28,7 +28,7 @@
     "react-redux": "^7.2.0",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
-    "socket.io": ">=2.3.0",
+    "socket.io": ">=2.4.0",
     "split-js": "^1.0.1"
   },
   "devDependencies": {
